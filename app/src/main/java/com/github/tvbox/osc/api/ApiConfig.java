@@ -189,8 +189,9 @@ public class ApiConfig {
     public void loadConfig(boolean useCache, LoadConfigCallback callback, Activity activity) {
         String apiUrl = Hawk.get(HawkConfig.API_URL, "");
         if (apiUrl.isEmpty()) {
-            callback.error("-1");
-            return;
+            apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
+            Hawk.put(HawkConfig.API_URL, apiUrl);
+            Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
         }
         File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl));
         if (useCache && cache.exists()) {

@@ -67,8 +67,10 @@ public class ApiDialog extends BaseDialog {
         inputApiLive = findViewById(R.id.inputLive);
         inputConfirm = findViewById(R.id.inputConfirm);
         //内置网络接口在此处添加
-        inputApi.setText(Hawk.get(HawkConfig.API_URL, ""));
-        inputApiLive.setText(Hawk.get(HawkConfig.LIVE_API_URL, Hawk.get(HawkConfig.API_URL)));
+        String apiUrl = Hawk.get(HawkConfig.API_URL, "");
+        if (apiUrl.isEmpty()) apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
+        inputApi.setText(apiUrl);
+        inputApiLive.setText(Hawk.get(HawkConfig.LIVE_API_URL, apiUrl));
         findViewById(R.id.inputSubmit).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
