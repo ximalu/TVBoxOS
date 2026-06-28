@@ -197,39 +197,39 @@ public class ApiConfig {
             apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
             Hawk.put(HawkConfig.API_URL, apiUrl);
             Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
+            loadConfig(false, callback, activity);
+            return;
         }
-        File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl));
+        final String fApiUrl = apiUrl;
+        final File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(fApiUrl));
         if (useCache && cache.exists()) {
             try {
                 String json = readConfigFile(cache);
-                if (switchApiCollectionIfNeeded(apiUrl, json)) {
+                if (switchApiCollectionIfNeeded(fApiUrl, json)) {
                     loadConfig(false, callback, activity);
                     return;
                 }
-                clearApiLinesIfUnmatched(apiUrl);
-                parseJson(apiUrl, json);
+                clearApiLinesIfUnmatched(fApiUrl);
+                parseJson(fApiUrl, json);
                 callback.success();
                 return;
             } catch (Throwable th) {
                 th.printStackTrace();
             }
         }
-        String configUrl=configUrl(apiUrl);
-
+        String configUrl=configUrl(fApiUrl);
         final String configKey = TempKey;
-
-        fetchConfigAsync(apiUrl, configUrl, configKey, new ConfigFetchCallback() {
+        fetchConfigAsync(fApiUrl, configUrl, configKey, new ConfigFetchCallback() {
             @Override
             public void success(String json) {
                 try {
-//                            LOG.longI("echo-ConfigJson", json);
-                    if (switchApiCollectionIfNeeded(apiUrl, json)) {
+                    if (switchApiCollectionIfNeeded(fApiUrl, json)) {
                         FileUtils.saveCache(cache,json);
                         loadConfig(false, callback, activity);
                         return;
                     }
-                    clearApiLinesIfUnmatched(apiUrl);
-                    parseJson(apiUrl, json);
+                    clearApiLinesIfUnmatched(fApiUrl);
+                    parseJson(fApiUrl, json);
                     FileUtils.saveCache(cache,json);
                     callback.success();
                 } catch (Throwable th) {
@@ -237,18 +237,17 @@ public class ApiConfig {
                     callback.error("配置解析失败");
                 }
             }
-
             @Override
             public void error(String error) {
                 if (cache.exists()) {
                     try {
                         String json = readConfigFile(cache);
-                        if (switchApiCollectionIfNeeded(apiUrl, json)) {
+                        if (switchApiCollectionIfNeeded(fApiUrl, json)) {
                             loadConfig(false, callback, activity);
                             return;
                         }
-                        clearApiLinesIfUnmatched(apiUrl);
-                        parseJson(apiUrl, json);
+                        clearApiLinesIfUnmatched(fApiUrl);
+                        parseJson(fApiUrl, json);
                         callback.success();
                         return;
                     } catch (Throwable th) {
