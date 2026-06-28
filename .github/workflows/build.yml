@@ -22,12 +22,22 @@ jobs:
           distribution: temurin
           java-version: 17
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.8'
+
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Configure signing
+      - name: Configure SDK & signing
         run: |
-          mkdir -p app
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          # Accept Android licenses
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true
+          # Ensure build-tools 30.0.3 is available
+          $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "build-tools;30.0.3" "platforms;android-33" > /dev/null 2>&1 || true
+          # Setup signing
           cp -f .github/workflows/TVBoxOSC.jks app/TVBoxOSC.jks
           echo "RELEASE_STORE_FILE=./TVBoxOSC.jks" >> gradle.properties
           echo "RELEASE_KEY_ALIAS=TVBoxOSC" >> gradle.properties
