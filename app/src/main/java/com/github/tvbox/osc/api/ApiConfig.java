@@ -194,9 +194,9 @@ public class ApiConfig {
                 return;
             }
             // assets加载失败，回退网络拉取
-            apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
-            Hawk.put(HawkConfig.API_URL, apiUrl);
-            Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
+            final String fallbackUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
+            Hawk.put(HawkConfig.API_URL, fallbackUrl);
+            Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(fallbackUrl); }});
             loadConfig(false, callback, activity);
             return;
         }
