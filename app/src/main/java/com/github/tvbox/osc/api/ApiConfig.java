@@ -189,33 +189,14 @@ public class ApiConfig {
     public void loadConfig(boolean useCache, LoadConfigCallback callback, Activity activity) {
         String apiUrl = Hawk.get(HawkConfig.API_URL, "");
         if (apiUrl.isEmpty()) {
-            // 首次启动 - 从 assets 加载内置配置（预集成点播源）
-            try {
-                InputStream is = App.getInstance().getAssets().open("default_config.json");
-                BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) {
-                    sb.append(line).append("\n");
-                }
-                br.close();
-                String json = sb.toString();
-                apiUrl = "embedded://default";
-                Hawk.put(HawkConfig.API_URL, apiUrl);
-                Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
-                File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl));
-                FileUtils.saveCache(cache, json);
-                clearApiLinesIfUnmatched(apiUrl);
-                parseJson(apiUrl, json);
-                callback.success();
+            // 首次启动 - 尝试从 assets 加载内置配置（预集成点播源）
+            if (loadFromEmbeddedConfig(callback)) {
                 return;
-            } catch (Exception e) {
-                e.printStackTrace();
-                // assets加载失败，回退网络
-                apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
-                Hawk.put(HawkConfig.API_URL, apiUrl);
-                Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
             }
+            // assets加载失败，回退网络拉取
+            apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
+            Hawk.put(HawkConfig.API_URL, apiUrl);
+            Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
         }
         File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl));
         if (useCache && cache.exists()) {
@@ -543,6 +524,36 @@ public class ApiConfig {
         try {
             if (closeable != null) closeable.close();
         } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * 从 APK assets 加载内置配置（预集成点播源）
+     * 首次启动时调用，避免网络请求
+     */
+    private boolean loadFromEmbeddedConfig(LoadConfigCallback callback) {
+        try {
+            InputStream is = App.getInstance().getAssets().open("default_config.json");
+            BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            StringBuilder sb = new StringBuilder();
+            String line;
+            while ((line = br.readLine()) != null) {
+                sb.append(line).append("\n");
+            }
+            br.close();
+            String json = sb.toString();
+            String embeddedUrl = "embedded://default";
+            Hawk.put(HawkConfig.API_URL, embeddedUrl);
+            Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(embeddedUrl); }});
+            File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(embeddedUrl));
+            FileUtils.saveCache(cache, json);
+            clearApiLinesIfUnmatched(embeddedUrl);
+            parseJson(embeddedUrl, json);
+            callback.success();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
         }
     }
 
