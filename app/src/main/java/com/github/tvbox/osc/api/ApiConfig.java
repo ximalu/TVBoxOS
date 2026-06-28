@@ -189,9 +189,33 @@ public class ApiConfig {
     public void loadConfig(boolean useCache, LoadConfigCallback callback, Activity activity) {
         String apiUrl = Hawk.get(HawkConfig.API_URL, "");
         if (apiUrl.isEmpty()) {
-            apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
-            Hawk.put(HawkConfig.API_URL, apiUrl);
-            Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
+            // 首次启动 - 从 assets 加载内置配置（预集成点播源）
+            try {
+                InputStream is = App.getInstance().getAssets().open("default_config.json");
+                BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) {
+                    sb.append(line).append("\n");
+                }
+                br.close();
+                String json = sb.toString();
+                apiUrl = "embedded://default";
+                Hawk.put(HawkConfig.API_URL, apiUrl);
+                Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
+                File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl));
+                FileUtils.saveCache(cache, json);
+                clearApiLinesIfUnmatched(apiUrl);
+                parseJson(apiUrl, json);
+                callback.success();
+                return;
+            } catch (Exception e) {
+                e.printStackTrace();
+                // assets加载失败，回退网络
+                apiUrl = "https://gh-proxy.com/https://raw.githubusercontent.com/noimank/tvbox/master/tvboxmuti.json";
+                Hawk.put(HawkConfig.API_URL, apiUrl);
+                Hawk.put(HawkConfig.API_HISTORY, new ArrayList<String>() {{ add(apiUrl); }});
+            }
         }
         File cache = new File(App.getInstance().getFilesDir().getAbsolutePath() + "/" + MD5.encode(apiUrl));
         if (useCache && cache.exists()) {
